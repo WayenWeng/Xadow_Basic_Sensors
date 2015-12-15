@@ -24,6 +24,31 @@ unsigned char tls256l_read_data(unsigned char Data_Adr)
     return Data;
 }
 
+void tls256l_read_data_number(unsigned char Data_Adr, unsigned char Data_len, unsigned char *Buffer)
+{
+    unsigned char i; 
+    
+    IIC_Start(); 
+    IIC_Send_Byte((TLS2561T_IIC_ADR<<1) | 0x00);
+    IIC_Wait_Ack();
+    IIC_Send_Byte(Data_Adr); 
+    IIC_Wait_Ack();
+		IIC_Start(); 
+		IIC_Send_Byte((TLS2561T_IIC_ADR<<1) | 0x01);
+		IIC_Wait_Ack();
+	
+		for(i=0;i<(Data_len - 1);i++)
+		{
+				
+				Buffer[i] = IIC_Read_Byte(); 
+				IIC_Ack();
+		}
+		Buffer[i] = IIC_Read_Byte(); 
+		IIC_NAck();
+		
+    IIC_Stop(); 
+}
+
 void tls2561t_write_data(unsigned char Data_Adr,unsigned char Data_Value)
 {
     IIC_Start(); 
@@ -44,17 +69,17 @@ void tls2561t_init(void)
     tls2561t_write_data(TSL2561_Control,0x00);  // POWER Down
 }
 
-unsigned long calculate_lux(unsigned char iGain, unsigned char tInt,unsigned char iType, unsigned int ch0, unsigned int ch1)
+unsigned long calculate_lux(unsigned char iGain, unsigned char tInt, unsigned char iType, unsigned int ch0, unsigned int ch1)
 {
     
     unsigned long chScale;
     unsigned long channel0;
     unsigned long channel1;
-     long ratio;
+    long ratio;
     unsigned long ratio1;
-     int b;
-     int m;
-     long temp;
+    int b;
+    int m;
+    long temp;
     unsigned long lux;
     
     switch (tInt)
@@ -138,19 +163,15 @@ void tls2561t_get_light_data(void)
     unsigned long lux;
     unsigned long DataLast = 0;
     unsigned long DataNew = 0;
-    
+    unsigned char buffer[4];
+		
     tls2561t_write_data(TSL2561_Control,0x03);  // POWER UP
-    delay_ms(14);
+    delay_ms(20);
 
-    ch0 = tls256l_read_data(TSL2561_Channal0H);
-    ch0 <<= 8;
-    ch0 |= tls256l_read_data(TSL2561_Channal0L);
-    
-    //read two bytes from registers 0x0E and 0x0F
-    ch1 = tls256l_read_data(TSL2561_Channal1H);
-    ch1 <<= 8;
-    ch1 = tls256l_read_data(TSL2561_Channal1L);
-    
+		tls256l_read_data_number(TSL2561_Channal0L, 4, buffer);
+		ch0 = buffer[1] * 256 + buffer[0];
+		ch1 = buffer[3] * 256 + buffer[2];
+		
     tls2561t_write_data(TSL2561_Control,0x00);  // POWER Down
     
     if(ch0/ch1 < 2 && ch0 > 4900)

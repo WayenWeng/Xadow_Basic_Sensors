@@ -74,6 +74,7 @@
 
 
 unsigned char tls2561t_read_data(unsigned char Data_Adr);
+void tls256l_read_data_number(unsigned char Data_Adr, unsigned char Data_len, unsigned char *Buffer);
 void tls2561t_write_data(unsigned char Data_Adr,unsigned char Data_Value);
 void tls2561t_init(void);
 void tls2561t_get_light_data(void);
